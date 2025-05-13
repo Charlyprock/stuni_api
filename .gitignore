@@ -1,0 +1,13 @@
+*.sqlite3
+*.sqlite
+*.db
+*.db-journal
+*.log
+.vscode
+.venv
+.env
+
+commit.txt
+*.pyc
+
+media
