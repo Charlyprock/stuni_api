@@ -29,10 +29,12 @@ INSTALLED_APPS = [
     # external apps
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'drf_yasg',  # Swagger UI (documentation)
     
     # local apps
+    'apps.univercitys',
     'apps.users',
 ]
 
@@ -102,6 +104,10 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+}
+
+SIMPLE_JWT = {
+    'BLACKLIST_AFTER_ROTATION': True,
 }
 
 MEDIA_URL = '/media/'

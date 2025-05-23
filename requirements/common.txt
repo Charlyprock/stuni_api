@@ -1,9 +1,10 @@
 Django
 djangorestframework
 djangorestframework-simplejwt
+djangorestframework-simplejwt[crypto]
 django-environ
 # django-filter
 Pillow
 drf-nested-routers
 django-cors-headers
-reportlab
+# reportlab

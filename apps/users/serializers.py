@@ -1,4 +1,5 @@
 from django.contrib.auth import authenticate
+from django.db import transaction
 from django.contrib.auth.password_validation import validate_password
 
 from rest_framework import serializers
@@ -6,63 +7,47 @@ from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from apps.users.models import User
+from apps.users.models import User, Student, Role, UserRole
 
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['username', 'email']
-
-class RegisterSerializer(serializers.ModelSerializer):
-
+class StudentSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, validators=[validate_password])
-    password_confirmation = serializers.CharField(write_only=True, required=True)
-    token = serializers.SerializerMethodField()
-
     class Meta:
         model = User
-        fields = ['username', 'email', 'password', 'password_confirmation', 'token']
-        read_only_fields = ['token']
+        fields = ['username', 'code', 'password']
 
-    def get_token(self, user):
-        token = RefreshToken.for_user(user)
-        return {
-            "access": str(token.access_token),
-            "refresh": str(token),
-        }
-    
-    def validate(self, attrs):
-        if attrs['password'] != attrs['password_confirmation']:
-            raise serializers.ValidationError({"password": "La confirmation du mot de passe incorrecte."})
-        
-        attrs.pop('password_confirmation')
-        return attrs
-
+    @transaction.atomic
     def create(self, validated_data):
+
         user = User.objects.create_user(**validated_data)
+        Student.objects.create(user=user)
+        user.save()
+
+        role, _ = Role.objects.get_or_create(name="student")
+        UserRole.objects.create(user=user, role=role)
+
         return user
     
 class LoginSerializer(TokenObtainPairSerializer):
-    username_field = 'email'
+    username_field = 'code'
 
     def validate(self, attrs):
-        email = attrs.get('email')
+        code = attrs.get('code')
         password = attrs.get('password')
 
-        if email and password:
-            user = authenticate(request=self.context.get('request'), email=email, password=password)
+        if code and password:
+            user = authenticate(request=self.context.get('request'), code=code, password=password)
 
             if not user:
-                raise serializers.ValidationError({"login_error": "Email ou mot de passe incorrect."})
+                raise serializers.ValidationError({"login_error": "Code or password incorrect."})
 
         else:
-            raise serializers.ValidationError('Email et mot de passe sont requis.')
+            raise serializers.ValidationError({"login_error": 'Code and passwors is required.'})
 
         data = super().validate(attrs)
 
         data['user'] = {
-            'id': user.id,
+            'id': user.pk,
             'username': user.username,
-            'email': user.email,
+            'code': user.code,
         }
         return data

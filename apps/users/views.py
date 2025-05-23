@@ -6,28 +6,37 @@ from rest_framework.response import Response
 from rest_framework import generics
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework import viewsets
-from rest_framework.exceptions import MethodNotAllowed
+from rest_framework.views import APIView
 
-from apps.users.serializers import RegisterSerializer, LoginSerializer, UserSerializer
-from apps.users.models import User
+from apps.users.serializers import StudentSerializer, LoginSerializer
+from apps.users.models import User, Student, Role, UserRole
+
 from apps.users.permissions import AdminPermission
 
 
-class RegisterView(generics.CreateAPIView):
+class StudentView(generics.CreateAPIView):
     queryset = User.objects.all()
-    serializer_class = RegisterSerializer
-
-    @transaction.atomic
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-
-        data = serializer.data
-        data["token"] = serializer.get_token(user)
-        return Response(data, status=status.HTTP_201_CREATED)
+    serializer_class = StudentSerializer
+    permission_classes = [AdminPermission]
     
 
 class LoginView(TokenObtainPairView):
     serializer_class = LoginSerializer
+
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        current = request.data.get('current_password')
+        new = request.data.get('new_password')
+
+        if not user.check_password(current):
+            return Response({'detail': 'current password is incorrect'}, status=400)
+
+        user.set_password(new)
+        user.save()
+        return Response({'detail': 'success'})
+
 
