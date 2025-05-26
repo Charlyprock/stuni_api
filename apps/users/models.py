@@ -22,6 +22,28 @@ class User(AbstractUser):
     def __str__(self):
         return f"email: {self.email}, code: {self.code}"
 
+    @property
+    def is_admin(self):
+        return self.is_staff
+    
+    @property
+    def is_student(self):
+        try:
+            self.student
+        except:
+            return False
+        else:
+            return True
+        
+    @property
+    def is_teacher(self):
+        try:
+            self.teacher
+        except:
+            return False
+        else:
+            return True
+
 # -----------------------------
 # Student model
 # -----------------------------
@@ -61,6 +83,11 @@ class Role(models.Model):
 
     def __str__(self):
         return self.name
+    
+    
+    @classmethod
+    def create_student(cls):
+        return cls.objects.get_or_create(name="student")
 
 # -----------------------------
 # UserRole association

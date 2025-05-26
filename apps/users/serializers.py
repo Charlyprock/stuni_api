@@ -22,7 +22,7 @@ class StudentSerializer(serializers.ModelSerializer):
         Student.objects.create(user=user)
         user.save()
 
-        role, _ = Role.objects.get_or_create(name="student")
+        role, _ = Role.create_student()
         UserRole.objects.create(user=user, role=role)
 
         return user

@@ -17,7 +17,7 @@ from apps.users.permissions import AdminPermission
 class StudentView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = StudentSerializer
-    permission_classes = [AdminPermission]
+    # permission_classes = [AdminPermission]
     
 
 class LoginView(TokenObtainPairView):
