@@ -6,9 +6,12 @@ from rest_framework_nested import routers
 
 from apps.users.views import StudentView, LoginView, ChangePasswordView
 
+route = DefaultRouter()
+route.register(r"students", StudentView, basename="students")
+
 
 urlpatterns = [
-    path('student/', StudentView.as_view(), name='students'),
+    path('', include(route.urls)),
     path('change_password/', ChangePasswordView.as_view(), name='change_password'),
     path('login/', LoginView.as_view(), name='login'),
     path('logout/', TokenBlacklistView.as_view(), name='token_blacklist'),
