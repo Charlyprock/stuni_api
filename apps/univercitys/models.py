@@ -1,3 +1,4 @@
+from datetime import date
 from django.db import models
 from apps.users.models import User
 
@@ -44,6 +45,13 @@ class LevelSpeciality(models.Model):
     class Meta:
         unique_together = ('level', 'speciality')
 
+    @classmethod
+    def validate_level_speciality(cls, level_id, speciality_id):
+        return cls.objects.filter(
+                level_id=level_id,
+                speciality_id=speciality_id
+            ).exists()
+
 # -----------------------------
 # Classe model
 # -----------------------------
@@ -63,7 +71,7 @@ class StudentLevelSpecialityClass(models.Model):
     level = models.ForeignKey('univercitys.Level',on_delete=models.CASCADE,related_name='enrollments')
     classe = models.ForeignKey('univercitys.Classe',on_delete=models.CASCADE,related_name='enrollments')
     speciality = models.ForeignKey('univercitys.Speciality',on_delete=models.CASCADE,related_name='enrollments')
-    year = models.CharField(max_length=9) # example: 2024/2025 or 2024-2025
+    year = models.CharField(max_length=9) # example: 2024/2025
     is_delegate = models.BooleanField(default=False)
 
     class Meta:
@@ -90,16 +98,29 @@ class StudentLevelSpecialityClass(models.Model):
             year=year,
             is_delegate=True
         ).select_related('student__user').first()
+    
+    @classmethod
+    def validate_year_format(cls, year):
+        year_now = date.today().year
+        years = year.split('/')
+        
+        if(len(years) == 2 and years[1] <= str(year_now)):
+            try:
+                if (int(years[0]) == int(years[1]) - 1):
+                    return True
+            except:
+                return False
+        
+        return False
 
     @classmethod
     def get_current_year(cls):
         """return current academic year"""
-        from datetime import date
         today = date.today()
         if today.month >= 9:
-            return f"{today.year}-{today.year + 1}"
+            return f"{today.year}/{today.year + 1}"
         else:
-            return f"{today.year - 1}-{today.year}"
+            return f"{today.year - 1}/{today.year}"
 
     @classmethod
     def get_students_for_class(cls, class_id, year=None):

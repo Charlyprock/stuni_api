@@ -6,7 +6,7 @@ from django.dispatch import receiver
 def delete_file_model(model_name, name_field="image"):
 
     @receiver(pre_delete, sender=model_name)
-    def delete_image(sender, instance, **kwargs):
+    def delete_file(sender, instance, **kwargs):
         attr = getattr(instance, name_field, None)
         if attr:
             try:

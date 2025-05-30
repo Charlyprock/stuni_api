@@ -8,7 +8,10 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework import viewsets
 from rest_framework.views import APIView
 
-from apps.users.serializers import StudentSerializer, LoginSerializer
+from apps.users.serializers import (
+    StudentSerializer, StudentModelSerializer,
+    LoginSerializer,
+)
 from apps.users.models import User, Student, Role, UserRole
 
 from apps.users.permissions import AdminPermission
@@ -16,8 +19,11 @@ from apps.users.permissions import AdminPermission
 
 class StudentView(viewsets.ModelViewSet):
     queryset = Student.objects.all()
-    serializer_class = StudentSerializer
-    # permission_classes = [AdminPermission]
+    serializer_class = StudentModelSerializer
+    # permission_classes = [IsAuthenticated]
+
+    def perform_destroy(self, instance):
+        instance.user.delete()
     
 
 class LoginView(TokenObtainPairView):

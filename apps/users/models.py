@@ -10,15 +10,17 @@ from django.contrib.auth.models import Permission
 class User(AbstractUser):
     email = models.EmailField(null=True, blank=True)
     username = models.CharField(max_length=150, validators=[UnicodeUsernameValidator()],)
+    first_name = models.CharField(max_length=150)
+    last_name = models.CharField(max_length=150)
     code = models.CharField(max_length=50, unique=True)
     phone = models.CharField(max_length=20, null=True, blank=True)
     address = models.TextField(null=True, blank=True)
-    genre = models.CharField(max_length=15, blank=True, default=True)
+    genre = models.CharField(max_length=15, blank=True, null=True)
     nationnality = models.CharField(max_length=100, null=True, blank=True)
     image = models.ImageField(upload_to="users/", null=True, blank=True)
 
     USERNAME_FIELD = 'code'
-    REQUIRED_FIELDS = ['username']
+    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
 
 
     def __str__(self):
@@ -45,6 +47,12 @@ class User(AbstractUser):
             return False
         else:
             return True
+    
+    @classmethod
+    def validate_genre(cls, genre):
+        if genre.lower() in ("m", "f"):
+            return True
+        return False
 
 # -----------------------------
 # Student model
@@ -59,9 +67,9 @@ class Student(models.Model):
         return f"{self.user.username}-{self.user.code}"
 
     @classmethod
-    def create_matricule(clt, speciality):
+    def generate_matricule(cls, speciality):  # STU2025RT0001
         year = datetime.datetime.now().year
-        student = Student.objects.filter(user__code__startswith=f"STU{year}")
+        student = cls.objects.filter(user__code__startswith=f"STU{year}")
         count = student.count() + 1
         return f"STU{year}{speciality.abbreviation}{str(count).zfill(4)}"
 
