@@ -105,6 +105,10 @@ class Role(models.Model):
     @classmethod
     def create_student_role(cls):
         return cls.objects.get_or_create(name="student")
+    
+    @classmethod
+    def create_teacher_role(cls):
+        return cls.objects.get_or_create(name="teacher")
 
 # -----------------------------
 # UserRole association

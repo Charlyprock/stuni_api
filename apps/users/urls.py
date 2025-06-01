@@ -4,10 +4,14 @@ from rest_framework_simplejwt.views import TokenRefreshView, TokenBlacklistView
 from rest_framework.routers import DefaultRouter
 from rest_framework_nested import routers
 
-from apps.users.views import StudentView, LoginView, ChangePasswordView
+from apps.users.views import (
+    StudentView, TeacherView,
+    LoginView, ChangePasswordView
+)
 
 route = DefaultRouter()
 route.register(r"students", StudentView, basename="students")
+route.register(r"teachers", TeacherView, basename="teachers")
 
 
 urlpatterns = [

@@ -5,16 +5,46 @@ from django.utils.timezone import now
 import os
 
 from rest_framework import serializers
-
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from apps.users.models import User, Student, Role, UserRole
+from apps.users.models import (
+    User, Student, Teacher,
+    Role, UserRole,
+)
 from apps.univercitys.models import (
     Level, Speciality, Classe,
     StudentLevelSpecialityClass as Enrollment, LevelSpeciality
 )
 from apps.univercitys.serializers import EnrollmentSerializer
+
+class UserSerializerMixin:
+
+    class Meta:
+        model = User
+        fields = [
+            'id', 'email', 'password', 'first_name', 'last_name', 'code', 
+            'phone', 'address', 'genre', 'nationnality', 'image',
+        ]
+    
+    def validate_genre(self, genre):
+        if not User.validate_genre(genre):
+            raise serializers.ValidationError({"genre": "the genre field must contain M or F."})
+        return genre
+
+    def get_fields(self):
+        fields = super().get_fields()
+        request = self.context.get('request')
+
+        if request:
+            if request.method in ['PATCH', 'PUT']:
+                fields['password'].required = False
+                fields['code'].required = False
+            elif request.method == 'GET':
+                fields['password'].required = True  
+                fields['password'].required = fields['password'].required
+        return fields
+
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, validators=[validate_password])
@@ -24,11 +54,6 @@ class UserSerializer(serializers.ModelSerializer):
             'id', 'email', 'password', 'first_name', 'last_name', 'code', 
             'phone', 'address', 'genre', 'nationnality', 'image',
         ]
-    
-class StudentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Student
-        fields = "__all__"
 
 class LoginSerializer(TokenObtainPairSerializer):
     username_field = 'code'
@@ -55,7 +80,7 @@ class LoginSerializer(TokenObtainPairSerializer):
         }
         return data
 
-class StudentModelSerializer(serializers.ModelSerializer):
+class StudentModelSerializer(UserSerializerMixin, serializers.ModelSerializer):
     
     email = serializers.EmailField(write_only=True, required=False)
     password = serializers.CharField(write_only=True, validators=[validate_password])
@@ -229,3 +254,83 @@ class StudentModelSerializer(serializers.ModelSerializer):
 
         return instance
 
+class TeacherSerializer(UserSerializerMixin, serializers.ModelSerializer):
+
+    email = serializers.EmailField(write_only=True, required=False)
+    password = serializers.CharField(write_only=True, validators=[validate_password])
+    code = serializers.CharField(write_only=True, required=True, min_length=10, max_length=25)  # si l'api doit générer le code
+    first_name = serializers.CharField(write_only=True, min_length=10)
+    last_name = serializers.CharField(write_only=True, min_length=10)
+    phone = serializers.CharField(write_only=True, required=False, min_length=9)
+    address = serializers.CharField(write_only=True, required=False)
+    genre = serializers.CharField(write_only=True, required=False)
+    nationnality = serializers.CharField(write_only=True, required=False)
+    image = serializers.ImageField(write_only=True, required=False)
+
+    user = UserSerializer(read_only=True)
+    teacher_id = serializers.IntegerField(source="id", read_only=True)
+
+    class Meta:
+        model = Teacher
+        fields = UserSerializerMixin.Meta.fields + ['grade', 'teacher_id', 'user']
+        read_only_fields = ['teacher_id', 'user']
+
+    def validate_code(self, code):
+        if User.objects.filter(code=code).exists():
+            raise serializers.ValidationError({"code": "This code already exists."})
+        return code
+
+    @transaction.atomic
+    def create(self, validated_data):
+        grade = validated_data.pop('grade', None)
+
+        user = User.objects.create_user(
+            username=f"{validated_data['first_name'].split(' ')[0]}",
+            **validated_data
+        )
+        teacher = Teacher.objects.create(
+            user=user,
+            grade=grade
+        )
+        user.save()
+
+        role, _ = Role.create_teacher_role()
+        UserRole.objects.create(user=user, role=role)
+
+        return teacher
+    
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        user_data = {
+            "first_name": validated_data.get("first_name", instance.user.first_name),
+            "last_name": validated_data.get("last_name", instance.user.last_name),
+            "code": validated_data.get("code", instance.user.code),
+            "email": validated_data.get("email", instance.user.email),
+            "phone": validated_data.get("phone", instance.user.phone),
+            "address": validated_data.get("address", instance.user.address),
+            "genre": validated_data.get("genre", instance.user.genre),
+            "nationnality": validated_data.get("nationnality", instance.user.nationnality),
+        }
+
+        if 'password' in validated_data:
+            raise serializers.ValidationError(
+                {"password": "The password is not update via this route."}
+            )
+
+        for attr, value in user_data.items():
+            setattr(instance.user, attr, value)
+
+        if 'image' in validated_data:
+            image_path = instance.user.image.path
+            
+            if os.path.isfile(image_path):
+                os.remove(image_path)
+
+            instance.user.image = validated_data['image']
+
+        instance.user.save()
+
+        instance.grade = validated_data.get('grade', instance.grade)
+        instance.save()
+
+        return instance

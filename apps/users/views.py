@@ -9,10 +9,13 @@ from rest_framework import viewsets
 from rest_framework.views import APIView
 
 from apps.users.serializers import (
-    StudentSerializer, StudentModelSerializer,
+    StudentModelSerializer, TeacherSerializer,
     LoginSerializer,
 )
-from apps.users.models import User, Student, Role, UserRole
+from apps.users.models import (
+    User, Student, Teacher,
+    Role, UserRole
+)
 
 from apps.users.permissions import AdminPermission
 
@@ -25,10 +28,8 @@ class StudentView(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         instance.user.delete()
     
-
 class LoginView(TokenObtainPairView):
     serializer_class = LoginSerializer
-
 
 class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
@@ -45,4 +46,10 @@ class ChangePasswordView(APIView):
         user.save()
         return Response({'detail': 'success'})
 
+class TeacherView(viewsets.ModelViewSet):
+    queryset = Teacher.objects.all()
+    serializer_class = TeacherSerializer
+    # permission_classes = [IsAuthenticated]
 
+    def perform_destroy(self, instance):
+        instance.user.delete()
