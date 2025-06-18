@@ -9,7 +9,8 @@ from apps.univercitys.views import (
     LevelViewSet,
     ClassViewSet,
     SpecialityViewSet,
-    LevelSpecialityViewSet,
+    LevelSpecialityView,
+    EnrollmentViewSet,
 )
 
 # route.register(r"admin/wholesalers", WholesalerAdminViewset, basename="admin-wholesalers")
@@ -22,11 +23,12 @@ route.register(r'departments', DepartmentViewSet, basename='departments')
 route.register(r'levels', LevelViewSet, basename='levels')
 route.register(r'classes', ClassViewSet, basename='classes')
 route.register(r'specialitys', SpecialityViewSet, basename='specialitys')
+route.register(r'enrollments', EnrollmentViewSet, basename='enrollments')
 
 # level_router = routers.NestedDefaultRouter(route, r'levels', lookup='level')
 # level_router.register(r'specialitys', LevelSpecialityViewSet, basename='level-specialitys')
 
 urlpatterns = [
     path('', include(route.urls)),
-    path('levels/<int:level_pk>/specialitys/', LevelSpecialityViewSet.as_view())
+    path('levels/<int:level_pk>/specialitys/', LevelSpecialityView.as_view())
 ]

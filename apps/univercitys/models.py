@@ -86,7 +86,7 @@ class StudentLevelSpecialityClass(models.Model):
         ordering = ['-year']
 
     def __str__(self):
-        return f"{self.student.user.username} - {self.classe.name} ({self.year})"
+        return f"{self.student.user.username}::{self.student.user.code} - {self.classe.name} ({self.year})"
 
     @classmethod
     def get_delegate(cls, class_id, year=None):

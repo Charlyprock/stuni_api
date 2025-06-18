@@ -5,13 +5,13 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_nested import routers
 
 from apps.users.views import (
-    StudentView, TeacherView,
+    StudentViewSet, TeacherViewSet,
     LoginView, ChangePasswordView
 )
 
 route = DefaultRouter()
-route.register(r"students", StudentView, basename="students")
-route.register(r"teachers", TeacherView, basename="teachers")
+route.register(r"students", StudentViewSet, basename="students")
+route.register(r"teachers", TeacherViewSet, basename="teachers")
 
 
 urlpatterns = [

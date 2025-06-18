@@ -16,11 +16,10 @@ from apps.users.models import (
     User, Student, Teacher,
     Role, UserRole
 )
-
 from apps.users.permissions import AdminPermission
 
 
-class StudentView(viewsets.ModelViewSet):
+class StudentViewSet(viewsets.ModelViewSet):
     queryset = Student.objects.all()
     serializer_class = StudentModelSerializer
     # permission_classes = [IsAuthenticated]
@@ -46,7 +45,7 @@ class ChangePasswordView(APIView):
         user.save()
         return Response({'detail': 'success'})
 
-class TeacherView(viewsets.ModelViewSet):
+class TeacherViewSet(viewsets.ModelViewSet):
     queryset = Teacher.objects.all()
     serializer_class = TeacherSerializer
     # permission_classes = [IsAuthenticated]

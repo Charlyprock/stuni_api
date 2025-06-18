@@ -128,7 +128,7 @@ class StudentModelSerializer(UserSerializerMixin, serializers.ModelSerializer):
         
         if data.get('year') and not Enrollment.validate_year_format(data['year']):
             raise serializers.ValidationError({"year": "Format of field year is invalid."})
-        elif not is_partial_update:
+        elif not data.get('year') and not is_partial_update:
             data['year'] = Enrollment.get_current_year()
         
         if not data.get("code") and not is_partial_update:
@@ -144,7 +144,7 @@ class StudentModelSerializer(UserSerializerMixin, serializers.ModelSerializer):
             raise serializers.ValidationError({"birth_date": "this date is invalide."})
 
         if data.get("is_delegate"):
-            if Enrollment.get_delegate(data['classe']):
+            if Enrollment.get_delegate(data['classe'], data.get('year')):
                 raise serializers.ValidationError({"is_delegate": "A delegate already exists for this class."})
 
         return data
@@ -234,7 +234,6 @@ class StudentModelSerializer(UserSerializerMixin, serializers.ModelSerializer):
         instance.is_work = validated_data.get('is_work', instance.is_work)
         instance.save()
 
-        latest_enrollment = instance.enrollments.order_by('-year').first()
         if latest_enrollment:
             latest_enrollment.level = validated_data.get('level', latest_enrollment.level)
             latest_enrollment.speciality = validated_data.get('speciality', latest_enrollment.speciality)
@@ -277,7 +276,7 @@ class TeacherSerializer(UserSerializerMixin, serializers.ModelSerializer):
 
     def validate_code(self, code):
         if User.objects.filter(code=code).exists():
-            raise serializers.ValidationError({"code": "This code already exists."})
+            raise serializers.ValidationError("This code already exists.")
         return code
 
     @transaction.atomic

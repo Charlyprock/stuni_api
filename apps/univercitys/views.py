@@ -12,7 +12,8 @@ from apps.univercitys.models import (
     Level,
     Classe,
     Speciality,
-    LevelSpeciality
+    LevelSpeciality,
+    StudentLevelSpecialityClass as Enrollment,
 )
 
 from apps.univercitys.serializers import (
@@ -22,6 +23,7 @@ from apps.univercitys.serializers import (
     ClassSerializer,
     SpecialitySerializer, SpecialityDetailSerializer,
     LevelSpecialitySerializer,
+    EnrollmentSerializer,
 )
 
 
@@ -58,6 +60,18 @@ class TestViewSet(viewsets.ModelViewSet):
     def partial_update(self, request, *args, **kwargs):
         return Response({"data": "partial_update"}, status=status.HTTP_200_OK)
     
+class EnrollmentViewSet(viewsets.ModelViewSet):
+    queryset = Enrollment.objects.all()
+    serializer_class = EnrollmentSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        params = self.request.GET
+
+        if params.get('student_id', None):
+            queryset = queryset.filter(student=params.get('student_id'))
+        return queryset
+        
 
 # # -----------------------------
 # Department ViewSet
@@ -99,7 +113,7 @@ class SpecialityViewSet(MultipleViewMixin, viewsets.ModelViewSet):
 # # -----------------------------
 # LevelSpeciality ViewSet
 # # -----------------------------
-class LevelSpecialityViewSet(generics.CreateAPIView):
+class LevelSpecialityView(generics.CreateAPIView):
     queryset = LevelSpeciality.objects.all()
     serializer_class = LevelSpecialitySerializer
     # permission_classes = [IsAdminOrReadOnly]

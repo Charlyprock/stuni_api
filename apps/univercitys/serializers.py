@@ -9,18 +9,38 @@ from apps.univercitys.models import (
     Classe,
     Speciality,
     LevelSpeciality,
-    StudentLevelSpecialityClass,
+    StudentLevelSpecialityClass as Enrollment
 )
 
 class EnrollmentSerializer(serializers.ModelSerializer):
-    speciality = serializers.CharField(source="speciality.abbreviation")
-    level = serializers.CharField(source="level.abbreviation")
-    classe = serializers.CharField(source="classe.abbreviation")
-    student = serializers.CharField(source="student.user.username")
+    # speciality = serializers.CharField(source="speciality.abbreviation", read_only=True)
+    # level = serializers.CharField(source="level.abbreviation", read_only=True)
+    # classe = serializers.CharField(source="classe.abbreviation", read_only=True)
+    # student = serializers.CharField(source="student.user.username", read_only=True)
     class Meta:
-        model = StudentLevelSpecialityClass
+        model = Enrollment
         # fields = ["year", "is_delegate", "speciality", "level", "classe", "student"]
         fields = "__all__"
+
+    def validate_year(self, year):
+        if not Enrollment.validate_year_format(year):
+            raise serializers.ValidationError("Format of field year is invalid.")
+        return year
+            
+    def validate(self, data):
+        is_partial_update = self.context.get('view').action == 'partial_update'
+
+        if data.get('level') and data.get("speciality") and not is_partial_update:
+            if not LevelSpeciality.validate_level_speciality(data.get('level').id, data['speciality'].id):
+                raise serializers.ValidationError(
+                    {"level": "this speciality is not disponible for the level."}
+                )
+
+        if data.get("is_delegate") and data.get('year'):
+            if Enrollment.get_delegate(data.get('classe'), data.get("year")):
+                raise serializers.ValidationError({"is_delegate": "A delegate already exists for this class."})
+        return data
+
 
 class TestSerializer(serializers.ModelSerializer):
     # enrollments = serializers.SerializerMethodField()
