@@ -1,5 +1,6 @@
 import datetime
 from django.db import models
+from django.db.models import Q
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.contrib.auth.models import Permission
@@ -21,6 +22,15 @@ class User(AbstractUser):
 
     USERNAME_FIELD = 'code'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['email'],
+                name='email_unique',
+                condition=~Q(email__isnull=True) & ~Q(email='')
+            )
+        ]
 
 
     def __str__(self):

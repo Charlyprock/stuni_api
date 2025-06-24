@@ -98,7 +98,13 @@ class LevelDetailSerializer(serializers.ModelSerializer):
 class ClassSerializer(serializers.ModelSerializer):
     class Meta:
         model = Classe
-        fields = ['id', 'name', 'abbreviation']
+        fields = ['id', 'name', 'abbreviation', 'speciality']
+
+class ClassDetailSerializer(serializers.ModelSerializer):
+    speciality = serializers.PrimaryKeyRelatedField(source='speciality.id', read_only=True)
+    class Meta:
+        model = Classe
+        fields = ClassSerializer.Meta.fields + ['speciality']
 
 
 # # -----------------------------
@@ -111,9 +117,10 @@ class SpecialitySerializer(serializers.ModelSerializer):
 
 class SpecialityDetailSerializer(serializers.ModelSerializer):
     levels = LevelSerializer(many=True)
+    classes = ClassSerializer(many=True)
     class Meta:
         model = Speciality
-        fields = SpecialitySerializer.Meta.fields + ["levels"]
+        fields = SpecialitySerializer.Meta.fields + ["levels", 'classes']
 
 
 # # -----------------------------

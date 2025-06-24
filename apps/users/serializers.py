@@ -137,6 +137,10 @@ class StudentModelSerializer(UserSerializerMixin, serializers.ModelSerializer):
             if User.objects.filter(code=data.get('code')).exists():
                 raise serializers.ValidationError({"code": "This code already exists."})
 
+        if data.get("email") and data.get("email") != '' and data.get("email") != None:
+            if User.objects.filter(email=data.get('email')).exists():
+                raise serializers.ValidationError({"email": "This email already exists."})
+
         if data.get("genre") and not User.validate_genre(data["genre"]):
             raise serializers.ValidationError({"genre": "the genre field must contain M or F."})
         

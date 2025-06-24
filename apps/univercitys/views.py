@@ -20,7 +20,7 @@ from apps.univercitys.serializers import (
     TestSerializer,
     DepartmentSerializer,
     LevelSerializer, LevelDetailSerializer,
-    ClassSerializer,
+    ClassSerializer, ClassDetailSerializer,
     SpecialitySerializer, SpecialityDetailSerializer,
     LevelSpecialitySerializer,
     EnrollmentSerializer,
@@ -95,9 +95,10 @@ class LevelViewSet(MultipleViewMixin, viewsets.ModelViewSet):
 # # -----------------------------
 # Class ViewSet
 # # -----------------------------
-class ClassViewSet(viewsets.ModelViewSet):
+class ClassViewSet(MultipleViewMixin, viewsets.ModelViewSet):
     queryset = Classe.objects.all()
     serializer_class = ClassSerializer
+    serializer_detail_class = ClassDetailSerializer
     # permission_classes = [IsAdminOrReadOnly]
 
 

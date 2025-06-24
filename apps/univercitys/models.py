@@ -58,6 +58,7 @@ class LevelSpeciality(models.Model):
 class Classe(models.Model):
     name = models.CharField(max_length=100, unique=True)
     abbreviation = models.SlugField(max_length=15, unique=True)
+    speciality = models.ForeignKey(Speciality, on_delete=models.CASCADE, related_name='classes')
 
     def __str__(self):
         return self.name
