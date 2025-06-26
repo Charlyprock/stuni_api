@@ -66,6 +66,24 @@ class DepartmentSerializer(serializers.ModelSerializer):
         model = Department
         fields = ['id', 'name', 'abbreviation', 'admin', 'admin_display']
         read_only_fields = ['id']
+
+class DepartmentDetailSerializer(serializers.ModelSerializer):
+    specialitys = serializers.SerializerMethodField()
+    admin_display = serializers.PrimaryKeyRelatedField(source='admin', read_only=True)
+
+    class Meta:
+        model = Department
+        fields = DepartmentSerializer.Meta.fields + ["specialitys"]
+
+    def get_specialitys(self, level):
+        return [
+            {
+                "id": speciality.id,
+                "name": speciality.name,
+                "abbreviation": speciality.abbreviation,
+            }
+            for speciality in level.specialitys.all()
+        ]
     
 
 # # -----------------------------

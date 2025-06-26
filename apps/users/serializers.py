@@ -114,7 +114,15 @@ class StudentModelSerializer(UserSerializerMixin, serializers.ModelSerializer):
         read_only_fields = ['id']
 
     def get_enrollments(self, student):
-        return EnrollmentSerializer(student.enrollments.all(), many=True).data
+        request = self.context.get('request')
+        year = request.query_params.get('year') or Enrollment.get_current_year()
+
+        try:
+            enrollment = student.enrollments.get(year=year)
+        except Enrollment.DoesNotExist:
+            return None
+
+        return EnrollmentSerializer(enrollment).data
 
     
     def validate(self, data):
@@ -256,6 +264,20 @@ class StudentModelSerializer(UserSerializerMixin, serializers.ModelSerializer):
             )
 
         return instance
+
+class StudentDetailModelSerializer(serializers.ModelSerializer):
+    enrollments = serializers.SerializerMethodField(read_only=True)
+    user = UserSerializer(read_only=True)
+
+    class Meta:
+        model = Student
+        fields = [
+            'id', 'birth_date', 'birth_place', 'is_work',
+            'user', 'enrollments'
+        ]
+
+    def get_enrollments(self, student):
+        return EnrollmentSerializer(student.enrollments.all(), many=True).data
 
 class TeacherSerializer(UserSerializerMixin, serializers.ModelSerializer):
 

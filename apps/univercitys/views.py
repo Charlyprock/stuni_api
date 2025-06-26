@@ -2,7 +2,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework import viewsets, generics
 
-from core.views import MultipleViewMixin
+from core.views import SerializerDetailMixin
 
 from apps.users.models import User, Student
 from apps.users.permissions import IsAdminOrReadOnly
@@ -18,7 +18,7 @@ from apps.univercitys.models import (
 
 from apps.univercitys.serializers import (
     TestSerializer,
-    DepartmentSerializer,
+    DepartmentSerializer, DepartmentDetailSerializer,
     LevelSerializer, LevelDetailSerializer,
     ClassSerializer, ClassDetailSerializer,
     SpecialitySerializer, SpecialityDetailSerializer,
@@ -76,16 +76,17 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
 # # -----------------------------
 # Department ViewSet
 # # -----------------------------
-class DepartmentViewSet(viewsets.ModelViewSet):
+class DepartmentViewSet(SerializerDetailMixin, viewsets.ModelViewSet):
     queryset = Department.objects.all()
     serializer_class = DepartmentSerializer
+    serializer_detail_class = DepartmentDetailSerializer
     # permission_classes = [IsAdminOrReadOnly]
 
 
 # # -----------------------------
 # Level ViewSet
 # # -----------------------------
-class LevelViewSet(MultipleViewMixin, viewsets.ModelViewSet):
+class LevelViewSet(SerializerDetailMixin, viewsets.ModelViewSet):
     queryset = Level.objects.all()
     serializer_class = LevelSerializer
     serializer_detail_class = LevelDetailSerializer
@@ -95,7 +96,7 @@ class LevelViewSet(MultipleViewMixin, viewsets.ModelViewSet):
 # # -----------------------------
 # Class ViewSet
 # # -----------------------------
-class ClassViewSet(MultipleViewMixin, viewsets.ModelViewSet):
+class ClassViewSet(SerializerDetailMixin, viewsets.ModelViewSet):
     queryset = Classe.objects.all()
     serializer_class = ClassSerializer
     serializer_detail_class = ClassDetailSerializer
@@ -105,7 +106,7 @@ class ClassViewSet(MultipleViewMixin, viewsets.ModelViewSet):
 # # -----------------------------
 # Speciality ViewSet
 # # -----------------------------
-class SpecialityViewSet(MultipleViewMixin, viewsets.ModelViewSet):
+class SpecialityViewSet(SerializerDetailMixin, viewsets.ModelViewSet):
     queryset = Speciality.objects.all()
     serializer_class = SpecialitySerializer
     serializer_detail_class = SpecialityDetailSerializer
