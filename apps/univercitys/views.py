@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework import viewsets, generics
+from rest_framework import viewsets, generics, status
+from rest_framework.views import APIView
 
 from core.views import SerializerDetailMixin
 
@@ -119,3 +120,38 @@ class LevelSpecialityView(generics.CreateAPIView):
     queryset = LevelSpeciality.objects.all()
     serializer_class = LevelSpecialitySerializer
     # permission_classes = [IsAdminOrReadOnly]
+
+
+class UnivercityYearsListView(APIView):
+    """
+        pour recupérer la liste de année acardemic ou il ya eu des inscriptions.
+    """
+    def get(self, request):
+        years = Enrollment.objects.values_list('year', flat=True).distinct().order_by('-year')
+        return Response(years, status=status.HTTP_200_OK)
+
+
+class DeleteStudentsIDView(APIView):
+    # permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request):
+        ids = request.data.get("ids", [])
+        
+        if not isinstance(ids, list) or not all(isinstance(i, int) for i in ids):
+            return Response({"error": "Une liste d'IDs valide est requise."}, status=400)
+
+        deleted = []
+        not_found = []
+
+        for student_id in ids:
+            try:
+                student = Student.objects.get(id=student_id)
+                student.user.delete()
+                deleted.append(student_id)
+            except Student.DoesNotExist:
+                not_found.append(student_id)
+
+        return Response({
+            "deleted": deleted,
+            "not_found": not_found
+        }, status=200 if deleted else 404)

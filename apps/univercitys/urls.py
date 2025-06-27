@@ -11,6 +11,7 @@ from apps.univercitys.views import (
     SpecialityViewSet,
     LevelSpecialityView,
     EnrollmentViewSet,
+    UnivercityYearsListView,
 )
 
 # route.register(r"admin/wholesalers", WholesalerAdminViewset, basename="admin-wholesalers")
@@ -30,5 +31,6 @@ route.register(r'enrollments', EnrollmentViewSet, basename='enrollments')
 
 urlpatterns = [
     path('', include(route.urls)),
-    path('levels/<int:level_pk>/specialitys/', LevelSpecialityView.as_view())
+    path('levels/<int:level_pk>/specialitys/', LevelSpecialityView.as_view()),
+    path("years-list/", UnivercityYearsListView.as_view(), name="years-list"),
 ]
