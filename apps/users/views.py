@@ -1,12 +1,11 @@
 from django.db import transaction
 
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from rest_framework import status
+from rest_framework import status, generics, viewsets, filters
 from rest_framework.response import Response
-from rest_framework import generics
 from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework import viewsets, filters
 from rest_framework.views import APIView
+from rest_framework.decorators import action
 
 from apps.users.serializers import (
     StudentModelSerializer, StudentDetailModelSerializer,
@@ -63,7 +62,30 @@ class StudentViewSet(SerializerDetailMixin, YearFilteredQuerySetMixin, viewsets.
 
     def perform_destroy(self, instance):
         instance.user.delete()
-    
+
+    @action(methods=['DELETE'], detail=False, url_path='students-ids-delete')
+    def student_delete_ids(self, request):
+        ids = request.data.get("ids", [])
+        
+        if not isinstance(ids, list) or not all(isinstance(i, int) for i in ids):
+            return Response({"error": "Une liste d'IDs valide est requise."}, status=400)
+
+        deleted = []
+        not_found = []
+
+        for student_id in ids:
+            try:
+                student = Student.objects.get(id=student_id)
+                student.user.delete()
+                deleted.append(student_id)
+            except Student.DoesNotExist:
+                not_found.append(student_id)
+
+        return Response({
+            "deleted": deleted,
+            "not_found": not_found
+        }, status=200 if deleted else 404)
+
 class LoginView(TokenObtainPairView):
     serializer_class = LoginSerializer
 

@@ -24,7 +24,7 @@ class YearFilteredQuerySetMixin:
 
 
 class CustomPagination(PageNumberPagination):
-    page_size = 1
+    page_size = 10
 
     def get_paginated_response(self, data):
         total_pages = math.ceil(self.page.paginator.count / self.page_size)
