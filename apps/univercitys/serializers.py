@@ -145,6 +145,7 @@ class SpecialityDetailSerializer(serializers.ModelSerializer):
 # LevelSpeciality Serializer
 # # -----------------------------
 class LevelSpecialitySerializer(serializers.ModelSerializer):
+    """ pour assigner plusieur spécialité a la fois a un niveau."""
     specialitys = serializers.ListField(
         child=serializers.PrimaryKeyRelatedField(queryset=Speciality.objects.all()),
     )
@@ -160,5 +161,7 @@ class LevelSpecialitySerializer(serializers.ModelSerializer):
             try:
                 LevelSpeciality.objects.create(level=level, speciality=speciality)
             except:
-                raise serializers.ValidationError({"speciality": f"This Speciality pk ({speciality.pk}) already exists for this level."})
+                raise serializers.ValidationError({"specialitys": [f"This Speciality pk ({speciality.pk}-{speciality.name}) already exists for this level."]})
         return validated_data
+
+    

@@ -1,6 +1,6 @@
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework import viewsets, generics, status
+from rest_framework import viewsets, generics, status, filters
 from rest_framework.views import APIView
 
 from core.views import SerializerDetailMixin
@@ -93,6 +93,12 @@ class LevelViewSet(SerializerDetailMixin, viewsets.ModelViewSet):
     serializer_detail_class = LevelDetailSerializer
     # permission_classes = [IsAdminOrReadOnly]
 
+    filter_backends = [filters.SearchFilter]
+    search_fields = [
+        'name',
+        'abbreviation'
+    ]
+
 
 # # -----------------------------
 # Class ViewSet
@@ -116,10 +122,34 @@ class SpecialityViewSet(SerializerDetailMixin, viewsets.ModelViewSet):
 # # -----------------------------
 # LevelSpeciality ViewSet
 # # -----------------------------
-class LevelSpecialityView(generics.CreateAPIView):
+class LevelSpecialityView(generics.CreateAPIView, generics.DestroyAPIView):
     queryset = LevelSpeciality.objects.all()
     serializer_class = LevelSpecialitySerializer
     # permission_classes = [IsAdminOrReadOnly]
+
+    def delete(self, request, level_pk):
+        ids = request.data.get("ids", [])
+
+        if not isinstance(ids, list) or not all(isinstance(i, int) for i in ids):
+            return Response({"error": "Liste d'IDs invalide."}, status=400)
+
+        level = generics.get_object_or_404(Level, pk=level_pk)
+        
+        deleted = []
+        not_found = []
+
+        for sid in ids:
+            try:
+                link = LevelSpeciality.objects.get(level=level, speciality_id=sid)
+                link.delete()
+                deleted.append(sid)
+            except LevelSpeciality.DoesNotExist:
+                not_found.append(sid)
+
+        return Response({
+            "deleted": deleted,
+            "not_found": not_found
+        }, status=200 if deleted else 404)
 
 
 class UnivercityYearsListView(APIView):

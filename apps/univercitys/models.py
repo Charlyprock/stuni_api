@@ -12,6 +12,9 @@ class Department(models.Model):
 
     def __str__(self):
         return self.name
+    
+    class Meta:
+        ordering = ['name']
 
 # -----------------------------
 # Level model
@@ -23,6 +26,9 @@ class Level(models.Model):
 
     def __str__(self):
         return self.name
+    
+    class Meta:
+        ordering = ['name']
 
 # -----------------------------
 # Speciality model
@@ -34,6 +40,9 @@ class Speciality(models.Model):
 
     def __str__(self):
         return self.name
+    
+    class Meta:
+        ordering = ['name']
 
 # -----------------------------
 # LevelSpeciality model
@@ -41,6 +50,9 @@ class Speciality(models.Model):
 class LevelSpeciality(models.Model):
     level = models.ForeignKey(Level, on_delete=models.CASCADE)
     speciality = models.ForeignKey(Speciality, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.level.name}-{self.speciality.name}"
 
     class Meta:
         unique_together = ('level', 'speciality')
@@ -62,6 +74,9 @@ class Classe(models.Model):
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        ordering = ['name']
 
 # -------------------------------------------
 # StudentLevelClassSpeciality model

@@ -27,7 +27,7 @@ route.register(r'specialitys', SpecialityViewSet, basename='specialitys')
 route.register(r'enrollments', EnrollmentViewSet, basename='enrollments')
 
 # level_router = routers.NestedDefaultRouter(route, r'levels', lookup='level')
-# level_router.register(r'specialitys', LevelSpecialityViewSet, basename='level-specialitys')
+# level_router.register(r'specialitys', LevelSpecialityView, basename='level-specialitys')
 
 urlpatterns = [
     path('', include(route.urls)),
