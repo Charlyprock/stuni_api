@@ -59,32 +59,41 @@ class TestSerializer(serializers.ModelSerializer):
 # Department Serializer
 # # -----------------------------
 
-class DepartmentSerializer(serializers.ModelSerializer):
-    admin_display = serializers.CharField(source='admin.username', read_only=True)
+class DepartmentSerializerMixin:
 
-    class Meta:
-        model = Department
-        fields = ['id', 'name', 'abbreviation', 'admin', 'admin_display']
-        read_only_fields = ['id']
-
-class DepartmentDetailSerializer(serializers.ModelSerializer):
-    specialitys = serializers.SerializerMethodField()
-    admin_display = serializers.PrimaryKeyRelatedField(source='admin', read_only=True)
-
-    class Meta:
-        model = Department
-        fields = DepartmentSerializer.Meta.fields + ["specialitys"]
-
-    def get_specialitys(self, level):
+    def get_specialitys(self, depart):
         return [
             {
                 "id": speciality.id,
                 "name": speciality.name,
                 "abbreviation": speciality.abbreviation,
             }
-            for speciality in level.specialitys.all()
+            for speciality in depart.specialitys.all()
         ]
-    
+        
+    def get_admin_display(self, depart):
+        return {
+            "id": depart.admin.id,
+            "username": depart.admin.username,
+            "code": depart.admin.code,
+        } if depart.admin  else None
+
+class DepartmentSerializer(DepartmentSerializerMixin, serializers.ModelSerializer):
+    admin_display = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Department
+        fields = ['id', 'name', 'abbreviation', 'admin', 'admin_display']
+        read_only_fields = ['id']
+
+class DepartmentDetailSerializer(DepartmentSerializerMixin, serializers.ModelSerializer):
+    specialitys = serializers.SerializerMethodField()
+    admin_display = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Department
+        fields = DepartmentSerializer.Meta.fields + ["specialitys"]
+
 
 # # -----------------------------
 # Level Serializer

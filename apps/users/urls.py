@@ -6,7 +6,8 @@ from rest_framework_nested import routers
 
 from apps.users.views import (
     StudentViewSet, TeacherViewSet,
-    LoginView, ChangePasswordView
+    LoginView, ChangePasswordView,
+    NoStudentUserListView,
 )
 
 route = DefaultRouter()
@@ -17,6 +18,7 @@ route.register(r"teachers", TeacherViewSet, basename="teachers")
 urlpatterns = [
     path('', include(route.urls)),
     path('change_password/', ChangePasswordView.as_view(), name='change_password'),
+    path("users/no-students/", NoStudentUserListView.as_view(), name="users-no-students"),
     path('login/', LoginView.as_view(), name='login'),
     path('logout/', TokenBlacklistView.as_view(), name='token_blacklist'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),

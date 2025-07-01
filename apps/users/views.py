@@ -11,6 +11,7 @@ from apps.users.serializers import (
     StudentModelSerializer, StudentDetailModelSerializer,
     TeacherSerializer,
     LoginSerializer,
+    UserSerializer,
 )
 from apps.users.models import (
     User, Student, Teacher,
@@ -111,3 +112,20 @@ class TeacherViewSet(viewsets.ModelViewSet):
 
     def perform_destroy(self, instance):
         instance.user.delete()
+
+
+class NoStudentUserListView(APIView):
+    # permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        student_role = Role.objects.filter(name="student").first()
+
+        if not student_role:
+            return Response({"error": "Rôle 'student' introuvable."}, status=status.HTTP_400_BAD_REQUEST)
+
+        student_user_ids = UserRole.objects.filter(role=student_role).values_list("user_id", flat=True)
+
+        users = User.objects.exclude(id__in=student_user_ids).distinct()
+
+        serializer = UserSerializer(users, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

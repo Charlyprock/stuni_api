@@ -83,6 +83,12 @@ class DepartmentViewSet(SerializerDetailMixin, viewsets.ModelViewSet):
     serializer_detail_class = DepartmentDetailSerializer
     # permission_classes = [IsAdminOrReadOnly]
 
+    filter_backends = [filters.SearchFilter]
+    search_fields = [
+        'name',
+        'abbreviation'
+    ]
+
 
 # # -----------------------------
 # Level ViewSet
@@ -134,7 +140,7 @@ class LevelSpecialityView(generics.CreateAPIView, generics.DestroyAPIView):
             return Response({"error": "Liste d'IDs invalide."}, status=400)
 
         level = generics.get_object_or_404(Level, pk=level_pk)
-        
+
         deleted = []
         not_found = []
 

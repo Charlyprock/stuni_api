@@ -19,7 +19,6 @@ from apps.univercitys.models import (
 from apps.univercitys.serializers import EnrollmentSerializer
 
 class UserSerializerMixin:
-
     class Meta:
         model = User
         fields = [
@@ -51,9 +50,11 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'id', 'email', 'password', 'first_name', 'last_name', 'code', 
+            'id', 'email', 'password', 'username', 'first_name', 'last_name', 'code', 
             'phone', 'address', 'genre', 'nationnality', 'image',
         ]
+
+        read_only_fields = ['id', 'username']
 
 class LoginSerializer(TokenObtainPairSerializer):
     username_field = 'code'
