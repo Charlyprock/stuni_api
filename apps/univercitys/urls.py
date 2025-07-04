@@ -7,7 +7,7 @@ from apps.univercitys.views import (
     TestViewSet,
     DepartmentViewSet,
     LevelViewSet,
-    ClassViewSet,
+    ClasseViewSet,
     SpecialityViewSet,
     LevelSpecialityView,
     EnrollmentViewSet,
@@ -22,7 +22,7 @@ route = DefaultRouter()
 route.register(r'test', TestViewSet, basename='test')
 route.register(r'departments', DepartmentViewSet, basename='departments')
 route.register(r'levels', LevelViewSet, basename='levels')
-route.register(r'classes', ClassViewSet, basename='classes')
+route.register(r'classes', ClasseViewSet, basename='classes')
 route.register(r'specialitys', SpecialityViewSet, basename='specialitys')
 route.register(r'enrollments', EnrollmentViewSet, basename='enrollments')
 

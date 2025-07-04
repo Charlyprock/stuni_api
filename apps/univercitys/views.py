@@ -1,9 +1,10 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework import viewsets, generics, status, filters
+from rest_framework.decorators import action
 from rest_framework.views import APIView
 
-from core.views import SerializerDetailMixin
+from core.views import SerializerDetailMixin, YearFilteredQuerySetMixin
 
 from apps.users.models import User, Student
 from apps.users.permissions import IsAdminOrReadOnly
@@ -26,6 +27,8 @@ from apps.univercitys.serializers import (
     LevelSpecialitySerializer,
     EnrollmentSerializer,
 )
+
+from apps.users.serializers import StudentModelSerializer
 
 
 class TestViewSet(viewsets.ModelViewSet):
@@ -109,11 +112,74 @@ class LevelViewSet(SerializerDetailMixin, viewsets.ModelViewSet):
 # # -----------------------------
 # Class ViewSet
 # # -----------------------------
-class ClassViewSet(SerializerDetailMixin, viewsets.ModelViewSet):
+class ClasseViewSet(viewsets.ModelViewSet):
     queryset = Classe.objects.all()
     serializer_class = ClassSerializer
-    serializer_detail_class = ClassDetailSerializer
+    # serializer_detail_class = ClassDetailSerializer
     # permission_classes = [IsAdminOrReadOnly]
+
+    filter_backends = [filters.SearchFilter]
+    search_fields = [
+        'name',
+        'abbreviation'
+    ]
+
+    def get_queryset(self):
+        department_id = self.request.query_params.get("department")
+        queryset = Classe.objects.all()
+
+        if department_id:
+            queryset = queryset.filter(speciality__department_id=department_id)
+
+        return queryset
+
+    @action(detail=True, methods=["post"], url_path="delegate")
+    def set_delegate(self, request, pk=None):
+        classe = self.get_object()
+        student_id = request.data.get("student")
+
+        if not student_id:
+            return Response({"student": "student is required."}, status=400)
+
+        year = Enrollment.get_current_year()
+
+        # Supprime le délégué actuel
+        Enrollment.objects.filter(classe=classe, year=year, is_delegate=True).update(is_delegate=False)
+
+        # Active le nouveau délégué
+        enrollment = generics.get_object_or_404(Enrollment, student_id=student_id, classe=classe, year=year)
+        enrollment.is_delegate = True
+        enrollment.save()
+
+        return Response({
+            "id": enrollment.student.id,
+            "first_name": enrollment.student.user.first_name,
+            "last_name": enrollment.student.user.last_name,
+            "username": enrollment.student.user.username,
+            "code": enrollment.student.user.code,
+        })
+
+    
+    @action(detail=True, methods=["get"], url_path="students")
+    def get_students(self, request, pk=None):
+        classe = self.get_object()
+        year = request.query_params.get("year") or Enrollment.get_current_year()
+
+        # Filtrer les inscriptions dans la classe et pour l'année
+        enrollments = classe.enrollments.filter(year=year).select_related("student__user")
+
+        data = [
+            {
+                "id": enrollment.student.id,
+                "first_name": enrollment.student.user.first_name,
+                "last_name": enrollment.student.user.last_name,
+                "username": enrollment.student.user.username,
+                "code": enrollment.student.user.code,
+            }
+            for enrollment in enrollments
+        ]
+
+        return Response(data, status=status.HTTP_200_OK)
 
 
 # # -----------------------------
@@ -125,6 +191,23 @@ class SpecialityViewSet(SerializerDetailMixin, viewsets.ModelViewSet):
     serializer_detail_class = SpecialityDetailSerializer
     # permission_classes = [IsAdminOrReadOnly]
 
+    filter_backends = [filters.SearchFilter]
+    search_fields = [
+        'name',
+        'abbreviation'
+    ]
+
+    
+    def get_queryset(self):
+        queryset = Speciality.objects.all()
+
+        department_id = self.request.query_params.get("department")
+        if department_id:
+            queryset = queryset.filter(department_id=department_id)
+
+        return queryset
+
+
 # # -----------------------------
 # LevelSpeciality ViewSet
 # # -----------------------------
@@ -134,6 +217,9 @@ class LevelSpecialityView(generics.CreateAPIView, generics.DestroyAPIView):
     # permission_classes = [IsAdminOrReadOnly]
 
     def delete(self, request, level_pk):
+        """
+            la suppretion remove des spécialité dans un level
+        """
         ids = request.data.get("ids", [])
 
         if not isinstance(ids, list) or not all(isinstance(i, int) for i in ids):

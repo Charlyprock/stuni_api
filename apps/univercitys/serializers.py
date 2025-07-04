@@ -123,9 +123,33 @@ class LevelDetailSerializer(serializers.ModelSerializer):
 # Class Serializer
 # # -----------------------------
 class ClassSerializer(serializers.ModelSerializer):
+    speciality_display = serializers.SerializerMethodField()
+    delegate = serializers.SerializerMethodField()
     class Meta:
         model = Classe
-        fields = ['id', 'name', 'abbreviation', 'speciality']
+        fields = ['id', 'name', 'abbreviation', 'speciality', 'speciality_display', 'delegate']
+
+    def get_speciality_display(self, classe):
+        return {
+            "id": classe.speciality.id,
+            "name": classe.speciality.name,
+            "abbreviation": classe.speciality.abbreviation,
+        }
+    
+    def get_delegate(self, classe):
+        request = self.context.get("request")
+        year = request.query_params.get("year")
+        if not year:
+            return None
+
+        enrollment = Enrollment.objects.filter(classe=classe, year=year, is_delegate=True).first()
+        return {
+            "id": enrollment.student.id,
+            "first_name": enrollment.student.user.first_name,
+            "last_name": enrollment.student.user.last_name,
+            "username": enrollment.student.user.username,
+            "code": enrollment.student.user.code,
+        } if enrollment else None
 
 class ClassDetailSerializer(serializers.ModelSerializer):
     speciality = serializers.PrimaryKeyRelatedField(source='speciality.id', read_only=True)
@@ -137,14 +161,22 @@ class ClassDetailSerializer(serializers.ModelSerializer):
 # # -----------------------------
 # Speciality Serializer
 # # -----------------------------
-class SpecialitySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Speciality
-        fields = ["id", "name", "abbreviation", "department"]
-
-class SpecialityDetailSerializer(serializers.ModelSerializer):
+class SpecialitySerializerMixin(serializers.ModelSerializer):
     levels = LevelSerializer(many=True)
     classes = ClassSerializer(many=True)
+    department_display = serializers.SerializerMethodField()
+
+    def get_department_display(self, speciality):
+        return DepartmentSerializer(speciality.department).data
+
+class SpecialitySerializer(SpecialitySerializerMixin, serializers.ModelSerializer):
+    
+    class Meta:
+        model = Speciality
+        fields = ["id", "name", "abbreviation", "department", "department_display"]
+
+class SpecialityDetailSerializer(SpecialitySerializerMixin, serializers.ModelSerializer):
+
     class Meta:
         model = Speciality
         fields = SpecialitySerializer.Meta.fields + ["levels", 'classes']

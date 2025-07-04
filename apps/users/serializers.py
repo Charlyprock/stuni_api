@@ -168,7 +168,7 @@ class StudentModelSerializer(UserSerializerMixin, serializers.ModelSerializer):
         user = User.objects.create_user(
             email=validated_data.get('email'),
             password=validated_data['password'],
-            username=f"{validated_data['first_name'].split(' ')[0]}",
+            username=f"{validated_data['first_name'].split(' ')[0]} {validated_data['last_name'].split(' ')[0]}",
             code=validated_data['code'],
             first_name=validated_data['first_name'],
             last_name=validated_data['last_name'],
@@ -205,6 +205,7 @@ class StudentModelSerializer(UserSerializerMixin, serializers.ModelSerializer):
         user_data = {
             "first_name": validated_data.get("first_name", instance.user.first_name),
             "last_name": validated_data.get("last_name", instance.user.last_name),
+            "username": f"{validated_data['first_name'].split(' ')[0]} {validated_data['last_name'].split(' ')[0]}",
             "code": validated_data.get("code", instance.user.code),
             "email": validated_data.get("email", instance.user.email),
             "phone": validated_data.get("phone", instance.user.phone),
@@ -311,7 +312,7 @@ class TeacherSerializer(UserSerializerMixin, serializers.ModelSerializer):
         grade = validated_data.pop('grade', None)
 
         user = User.objects.create_user(
-            username=f"{validated_data['first_name'].split(' ')[0]}",
+            username=f"{validated_data['first_name'].split(' ')[0]} {validated_data['last_name'].split(' ')[0]}",
             **validated_data
         )
         teacher = Teacher.objects.create(
@@ -330,6 +331,7 @@ class TeacherSerializer(UserSerializerMixin, serializers.ModelSerializer):
         user_data = {
             "first_name": validated_data.get("first_name", instance.user.first_name),
             "last_name": validated_data.get("last_name", instance.user.last_name),
+            "username": f"{validated_data['first_name'].split(' ')[0]} {validated_data['last_name'].split(' ')[0]}",
             "code": validated_data.get("code", instance.user.code),
             "email": validated_data.get("email", instance.user.email),
             "phone": validated_data.get("phone", instance.user.phone),
@@ -340,7 +342,7 @@ class TeacherSerializer(UserSerializerMixin, serializers.ModelSerializer):
 
         if 'password' in validated_data:
             raise serializers.ValidationError(
-                {"password": "The password is not update via this route."}
+                {"password": ["The password is not update via this route."]}
             )
 
         for attr, value in user_data.items():
