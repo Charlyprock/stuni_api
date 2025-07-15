@@ -41,6 +41,37 @@ class EnrollmentSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"is_delegate": "A delegate already exists for this class."})
         return data
 
+class EnrollmentDetailSerializer(serializers.ModelSerializer):
+    speciality = serializers.SerializerMethodField()
+    level = serializers.SerializerMethodField()
+    classe = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Enrollment
+        # fields = ["year", "is_delegate", "speciality", "level", "classe", "student"]
+        fields = "__all__"
+
+    def get_level(self, enrollment):
+        return {
+            "id": enrollment.level.id,
+            "name": enrollment.level.name,
+            "abbreviation": enrollment.level.abbreviation
+        }
+    
+    def get_speciality(self, enrollment):
+        return {
+            "id": enrollment.speciality.id,
+            "name": enrollment.speciality.name,
+            "abbreviation": enrollment.speciality.abbreviation
+        }
+    
+    def get_classe(self, enrollment):
+        return {
+            "id": enrollment.classe.id,
+            "name": enrollment.classe.name,
+            "abbreviation": enrollment.classe.abbreviation
+        }
+
 
 class TestSerializer(serializers.ModelSerializer):
     # enrollments = serializers.SerializerMethodField()

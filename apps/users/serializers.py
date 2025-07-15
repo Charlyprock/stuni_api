@@ -16,7 +16,7 @@ from apps.univercitys.models import (
     Level, Speciality, Classe,
     StudentLevelSpecialityClass as Enrollment, LevelSpeciality
 )
-from apps.univercitys.serializers import EnrollmentSerializer
+from apps.univercitys.serializers import EnrollmentDetailSerializer
 
 class UserSerializerMixin:
     class Meta:
@@ -123,9 +123,8 @@ class StudentModelSerializer(UserSerializerMixin, serializers.ModelSerializer):
         except Enrollment.DoesNotExist:
             return None
 
-        return EnrollmentSerializer(enrollment).data
+        return EnrollmentDetailSerializer(enrollment).data
 
-    
     def validate(self, data):
         is_partial_update = self.context.get('view').action == 'partial_update'
 
@@ -219,25 +218,26 @@ class StudentModelSerializer(UserSerializerMixin, serializers.ModelSerializer):
                 {"password": "The password is not update via this route."}
             )
 
-        latest_enrollment = instance.enrollments.order_by('-year').first()
+        # latest_enrollment = instance.enrollments.order_by('-year').first()
 
-        level = validated_data.get('level', latest_enrollment.level)
-        speciality = validated_data.get('speciality', latest_enrollment.speciality)
+        # level = validated_data.get('level', latest_enrollment.level)
+        # speciality = validated_data.get('speciality', latest_enrollment.speciality)
 
-        if level and speciality:
-            if not LevelSpeciality.validate_level_speciality(level.id, speciality.id):
-                raise serializers.ValidationError(
-                    {"level": "this speciality is not disponible for the level."}
-                )
+        # if level and speciality:
+        #     if not LevelSpeciality.validate_level_speciality(level.id, speciality.id):
+        #         raise serializers.ValidationError(
+        #             {"level": "this speciality is not disponible for the level."}
+        #         )
 
         for attr, value in user_data.items():
             setattr(instance.user, attr, value)
 
         if 'image' in validated_data:
-            image_path = instance.user.image.path
-            
-            if os.path.isfile(image_path):
-                os.remove(image_path)
+
+            image = instance.user.image
+            if image:
+                if os.path.isfile(image.path):
+                    os.remove(image.path)
 
             instance.user.image = validated_data['image']
 
@@ -248,22 +248,22 @@ class StudentModelSerializer(UserSerializerMixin, serializers.ModelSerializer):
         instance.is_work = validated_data.get('is_work', instance.is_work)
         instance.save()
 
-        if latest_enrollment:
-            latest_enrollment.level = validated_data.get('level', latest_enrollment.level)
-            latest_enrollment.speciality = validated_data.get('speciality', latest_enrollment.speciality)
-            latest_enrollment.classe = validated_data.get('classe', latest_enrollment.classe)
-            latest_enrollment.year = validated_data.get('year', latest_enrollment.year)
-            latest_enrollment.is_delegate = validated_data.get('is_delegate', latest_enrollment.is_delegate)
-            latest_enrollment.save()
-        else:
-            Enrollment.objects.create(
-                student=instance,
-                level=validated_data['level'],
-                speciality=validated_data['speciality'],
-                classe=validated_data['classe'],
-                year=validated_data['year'],
-                is_delegate=validated_data.get('is_delegate', False)
-            )
+        # if latest_enrollment:
+        #     latest_enrollment.level = validated_data.get('level', latest_enrollment.level)
+        #     latest_enrollment.speciality = validated_data.get('speciality', latest_enrollment.speciality)
+        #     latest_enrollment.classe = validated_data.get('classe', latest_enrollment.classe)
+        #     latest_enrollment.year = validated_data.get('year', latest_enrollment.year)
+        #     latest_enrollment.is_delegate = validated_data.get('is_delegate', latest_enrollment.is_delegate)
+        #     latest_enrollment.save()
+        # else:
+        #     Enrollment.objects.create(
+        #         student=instance,
+        #         level=validated_data['level'],
+        #         speciality=validated_data['speciality'],
+        #         classe=validated_data['classe'],
+        #         year=validated_data['year'],
+        #         is_delegate=validated_data.get('is_delegate', False)
+        #     )
 
         return instance
 
@@ -279,7 +279,7 @@ class StudentDetailModelSerializer(serializers.ModelSerializer):
         ]
 
     def get_enrollments(self, student):
-        return EnrollmentSerializer(student.enrollments.all(), many=True).data
+        return EnrollmentDetailSerializer(student.enrollments.all(), many=True).data
 
 class TeacherSerializer(UserSerializerMixin, serializers.ModelSerializer):
 
