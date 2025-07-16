@@ -25,7 +25,7 @@ from apps.univercitys.serializers import (
     ClassSerializer, ClassDetailSerializer,
     SpecialitySerializer, SpecialityDetailSerializer,
     LevelSpecialitySerializer,
-    EnrollmentSerializer,
+    EnrollmentSerializer, EnrollmentDetailSerializer
 )
 
 from apps.users.serializers import StudentModelSerializer
@@ -64,9 +64,10 @@ class TestViewSet(viewsets.ModelViewSet):
     def partial_update(self, request, *args, **kwargs):
         return Response({"data": "partial_update"}, status=status.HTTP_200_OK)
     
-class EnrollmentViewSet(viewsets.ModelViewSet):
+class EnrollmentViewSet(SerializerDetailMixin, viewsets.ModelViewSet):
     queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer
+    serializer_detail_class = EnrollmentDetailSerializer
 
     def get_queryset(self):
         queryset = super().get_queryset()

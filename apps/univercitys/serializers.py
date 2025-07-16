@@ -29,7 +29,7 @@ class EnrollmentSerializer(serializers.ModelSerializer):
             
     def validate(self, data):
         is_partial_update = self.context.get('view').action == 'partial_update'
-
+        
         if data.get('level') and data.get("speciality") and not is_partial_update:
             if not LevelSpeciality.validate_level_speciality(data.get('level').id, data['speciality'].id):
                 raise serializers.ValidationError(
