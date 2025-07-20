@@ -7,6 +7,7 @@ class UsersConfig(AppConfig):
 
     def ready(self):
         from core import signals
-        from apps.users.models import User
+        from apps.users.models import User, StudentAttachment
 
         signals.delete_file_model(User)
+        signals.delete_file_model(StudentAttachment, field_name='file')

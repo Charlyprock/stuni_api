@@ -1,7 +1,7 @@
 from django.db import transaction
 
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from rest_framework import status, generics, viewsets, filters
+from django.http import FileResponse, Http404
+from rest_framework import status, generics, viewsets, filters, permissions, parsers
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.views import APIView
@@ -9,17 +9,46 @@ from rest_framework.decorators import action
 
 from apps.users.serializers import (
     StudentModelSerializer, StudentDetailModelSerializer,
+    StudentAttachmentSerializer,
     TeacherSerializer,
     LoginSerializer,
     UserSerializer,
 )
 from apps.users.models import (
-    User, Student, Teacher,
+    User, Student, StudentAttachment,
+    Teacher,
     Role, UserRole
 )
 from apps.users.permissions import AdminPermission
 from core.views import YearFilteredQuerySetMixin, SerializerDetailMixin, CustomPagination
 
+
+class StudentAttachmentViewSet(viewsets.ModelViewSet):
+    queryset = StudentAttachment.objects.all()
+    serializer_class = StudentAttachmentSerializer
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser]
+    # permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        """
+        Filtrer les pièces jointes selon l'étudiant si besoin.
+        """
+        student_id = self.request.query_params.get("student_id")
+        if student_id:
+            return self.queryset.filter(student_id=student_id)
+        return self.queryset
+    
+
+    @action(detail=True, methods=["get"], url_path="download")
+    def download(self, request, student_pk=None, pk=None):
+        try:
+            # attachment = StudentAttachment.objects.get(pk=pk, student_id=student_pk)
+            attachment = StudentAttachment.objects.get(pk=pk)
+        except StudentAttachment.DoesNotExist:
+            raise Http404("Pièce jointe introuvable.")
+
+        response = FileResponse(attachment.file.open('rb'), as_attachment=True, filename=attachment.file.name)
+        return response
 
 class StudentViewSet(SerializerDetailMixin, YearFilteredQuerySetMixin, viewsets.ModelViewSet):
     queryset = Student.objects.all()
@@ -94,7 +123,7 @@ class LoginView(TokenObtainPairView):
     serializer_class = LoginSerializer
 
 class ChangePasswordView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
         user = request.user

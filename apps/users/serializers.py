@@ -9,7 +9,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from apps.users.models import (
-    User, Student, Teacher,
+    User, Student, StudentAttachment,
+    Teacher,
     Role, UserRole,
 )
 from apps.univercitys.models import (
@@ -80,6 +81,13 @@ class LoginSerializer(TokenObtainPairSerializer):
             'code': user.code,
         }
         return data
+
+
+class StudentAttachmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentAttachment
+        fields = ['id', 'student', 'title', 'file', 'mime_type', 'created_at']
+        read_only_fields = ['mime_type', 'created_at']
 
 class StudentModelSerializer(UserSerializerMixin, serializers.ModelSerializer):
     
@@ -272,17 +280,21 @@ class StudentModelSerializer(UserSerializerMixin, serializers.ModelSerializer):
 
 class StudentDetailModelSerializer(serializers.ModelSerializer):
     enrollments = serializers.SerializerMethodField(read_only=True)
+    attachments = serializers.SerializerMethodField(read_only=True)
     user = UserSerializer(read_only=True)
 
     class Meta:
         model = Student
         fields = [
             'id', 'birth_date', 'birth_place', 'is_work',
-            'user', 'enrollments'
+            'user', 'enrollments', 'attachments'
         ]
 
     def get_enrollments(self, student):
         return EnrollmentDetailSerializer(student.enrollments.all(), many=True).data
+    
+    def get_attachments(self, student):
+        return StudentAttachmentSerializer(student.attachments.all(), many=True).data
 
 class TeacherSerializer(UserSerializerMixin, serializers.ModelSerializer):
 

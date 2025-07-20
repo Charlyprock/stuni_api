@@ -82,6 +82,18 @@ class Student(models.Model):
         student = cls.objects.filter(user__code__startswith=f"STU{year}")
         count = student.count() + 1
         return f"STU{year}{speciality.abbreviation}{str(count).zfill(4)}"
+    
+class StudentAttachment(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="attachments")
+    title = models.CharField(max_length=255)
+    file = models.FileField(upload_to="student_attachments/")
+    mime_type = models.CharField(max_length=100, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if self.file:
+            self.mime_type = self.file.file.content_type
+        super().save(*args, **kwargs)
 
 # -----------------------------
 # Teacher model
