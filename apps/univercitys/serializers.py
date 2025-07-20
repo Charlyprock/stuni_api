@@ -13,14 +13,15 @@ from apps.univercitys.models import (
 )
 
 class EnrollmentSerializer(serializers.ModelSerializer):
-    # speciality = serializers.CharField(source="speciality.abbreviation", read_only=True)
-    # level = serializers.CharField(source="level.abbreviation", read_only=True)
-    # classe = serializers.CharField(source="classe.abbreviation", read_only=True)
-    # student = serializers.CharField(source="student.user.username", read_only=True)
+    speciality_display = serializers.SerializerMethodField(read_only=True)
+    level_display = serializers.SerializerMethodField(read_only=True)
+    classe_display = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = Enrollment
-        # fields = ["year", "is_delegate", "speciality", "level", "classe", "student"]
-        fields = "__all__"
+        fields = ["id", "year", "is_delegate", "speciality", "level", "classe", "student", 
+            "speciality_display", "level_display", "classe_display"
+        ]
+        # fields = "__all__"
 
     def validate_year(self, year):
         if not Enrollment.validate_year_format(year):
@@ -41,31 +42,56 @@ class EnrollmentSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"is_delegate": "A delegate already exists for this class."})
         return data
 
-class EnrollmentDetailSerializer(serializers.ModelSerializer):
-    speciality = serializers.SerializerMethodField()
-    level = serializers.SerializerMethodField()
-    classe = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Enrollment
-        # fields = ["year", "is_delegate", "speciality", "level", "classe", "student"]
-        fields = "__all__"
-
-    def get_level(self, enrollment):
+    def get_level_display(self, enrollment):
         return {
             "id": enrollment.level.id,
             "name": enrollment.level.name,
             "abbreviation": enrollment.level.abbreviation
         }
     
-    def get_speciality(self, enrollment):
+    def get_speciality_display(self, enrollment):
         return {
             "id": enrollment.speciality.id,
             "name": enrollment.speciality.name,
             "abbreviation": enrollment.speciality.abbreviation
         }
     
-    def get_classe(self, enrollment):
+    def get_classe_display(self, enrollment):
+        return {
+            "id": enrollment.classe.id,
+            "name": enrollment.classe.name,
+            "abbreviation": enrollment.classe.abbreviation
+        }
+
+
+
+class EnrollmentDetailSerializer(serializers.ModelSerializer):
+    speciality_display = serializers.SerializerMethodField(read_only=True)
+    level_display = serializers.SerializerMethodField(read_only=True)
+    classe_display = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Enrollment
+        fields = ["id", "year", "is_delegate", "student", 
+            "speciality_display", "level_display", "classe_display"
+        ]
+        # fields = "__all__"
+
+    def get_level_display(self, enrollment):
+        return {
+            "id": enrollment.level.id,
+            "name": enrollment.level.name,
+            "abbreviation": enrollment.level.abbreviation
+        }
+    
+    def get_speciality_display(self, enrollment):
+        return {
+            "id": enrollment.speciality.id,
+            "name": enrollment.speciality.name,
+            "abbreviation": enrollment.speciality.abbreviation
+        }
+    
+    def get_classe_display(self, enrollment):
         return {
             "id": enrollment.classe.id,
             "name": enrollment.classe.name,

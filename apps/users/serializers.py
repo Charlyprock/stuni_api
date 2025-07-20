@@ -145,9 +145,9 @@ class StudentModelSerializer(UserSerializerMixin, serializers.ModelSerializer):
             if User.objects.filter(code=data.get('code')).exists():
                 raise serializers.ValidationError({"code": "This code already exists."})
 
-        if data.get("email") and data.get("email") != '' and data.get("email") != None:
-            if User.objects.filter(email=data.get('email')).exists():
-                raise serializers.ValidationError({"email": "This email already exists."})
+        # if data.get("email") and data.get("email") != '' and data.get("email") != None:
+        #     if User.objects.filter(email=data.get('email')).exists():
+        #         raise serializers.ValidationError({"email": "This email already exists."})
 
         if data.get("genre") and not User.validate_genre(data["genre"]):
             raise serializers.ValidationError({"genre": "the genre field must contain M or F."})
@@ -163,20 +163,22 @@ class StudentModelSerializer(UserSerializerMixin, serializers.ModelSerializer):
     
     @transaction.atomic
     def create(self, validated_data):
-       
-        user = User.objects.create_user(
-            email=validated_data.get('email'),
-            password=validated_data['password'],
-            username=f"{validated_data['first_name'].split(' ')[0]} {validated_data['last_name'].split(' ')[0]}",
-            code=validated_data['code'],
-            first_name=validated_data['first_name'],
-            last_name=validated_data['last_name'],
-            phone=validated_data.get('phone'),
-            address=validated_data.get('address'),
-            genre=validated_data.get('genre'),
-            nationnality=validated_data.get('nationnality'),
-            image=validated_data.get('image')
-        )
+        try:
+            user = User.objects.create_user(
+                email=validated_data.get('email'),
+                password=validated_data['password'],
+                username=f"{validated_data['first_name'].split(' ')[0]} {validated_data['last_name'].split(' ')[0]}",
+                code=validated_data['code'],
+                first_name=validated_data['first_name'],
+                last_name=validated_data['last_name'],
+                phone=validated_data.get('phone'),
+                address=validated_data.get('address'),
+                genre=validated_data.get('genre'),
+                nationnality=validated_data.get('nationnality'),
+                image=validated_data.get('image')
+            )
+        except:
+            raise serializers.ValidationError({'email': ["This email already exists."]})
 
         student = Student.objects.create(
             user=user,
@@ -201,6 +203,7 @@ class StudentModelSerializer(UserSerializerMixin, serializers.ModelSerializer):
 
     @transaction.atomic
     def update(self, instance, validated_data):
+
         user_data = {
             "first_name": validated_data.get("first_name", instance.user.first_name),
             "last_name": validated_data.get("last_name", instance.user.last_name),

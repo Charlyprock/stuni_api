@@ -91,12 +91,15 @@ class StudentLevelSpecialityClass(models.Model):
     is_delegate = models.BooleanField(default=False)
 
     class Meta:
-        unique_together = ('student', 'level', 'classe', 'year')
         constraints = [
             models.UniqueConstraint(
                 fields=['classe', 'year'],
                 condition=models.Q(is_delegate=True),
                 name='unique_delegate_per_class_year'
+            ),
+            models.UniqueConstraint(
+                fields=['student', 'year'],
+                name='unique_student_per_year'
             )
         ]
         ordering = ['-year']
