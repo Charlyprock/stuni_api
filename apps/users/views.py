@@ -1,4 +1,5 @@
 from django.db import transaction
+from collections import defaultdict
 
 from django.http import FileResponse, Http404
 from rest_framework import status, generics, viewsets, filters, permissions, parsers
@@ -18,6 +19,18 @@ from apps.users.models import (
     User, Student, StudentAttachment,
     Teacher,
     Role, UserRole
+)
+
+from apps.univercitys.models import (
+    LevelSpeciality
+)
+from apps.courses.models import (
+    SubjectLevelSpeciality,
+    Subject, TeacherSubjectClass,
+)
+
+from apps.courses.serializers import (
+    TeacherClassInfoSerializer
 )
 from apps.users.permissions import AdminPermission
 from core.views import YearFilteredQuerySetMixin, SerializerDetailMixin, CustomPagination
@@ -138,7 +151,7 @@ class ChangePasswordView(APIView):
         return Response({'detail': 'success'})
 
 class TeacherViewSet(YearFilteredQuerySetMixin, viewsets.ModelViewSet):
-    queryset = Teacher.objects.all()
+    queryset = Teacher.objects.select_related('user').all()
     serializer_class = TeacherSerializer
     pagination_class = CustomPagination
     # permission_classes = [IsAuthenticated]
@@ -150,40 +163,62 @@ class TeacherViewSet(YearFilteredQuerySetMixin, viewsets.ModelViewSet):
         'user__last_name',
     ]
 
+
     def get_queryset(self):
-        # GET /teachers/?year=2024/2025&level=1&speciality=1&department=1&classe=1 &search=charly
-
-        queryset = queryset = Teacher.objects.filter()
-
-        if not self.action == 'retrieve':
-            queryset = Teacher.objects.filter(
-                enrollments__year=self.get_year()
-            )
-
-        level_id = self.request.query_params.get("level")
-        department_id = self.request.query_params.get("department")
-        speciality_id = self.request.query_params.get("speciality")
+        """
+        Si les paramètres year, level, speciality et classe sont fournis,
+        renvoyer uniquement les enseignants de cette classe.
+        Sinon, renvoyer tous les enseignants.
+        """
+        year = self.request.query_params.get("year")
+        level = self.request.query_params.get("level")
+        speciality = self.request.query_params.get("speciality")
         classe_id = self.request.query_params.get("classe")
 
-        if level_id:
-            queryset = queryset.filter(enrollments__level_id=level_id)
+        if all([year, level, speciality, classe_id]):
+            try:
+                level_speciality = LevelSpeciality.objects.get(level_id=level, speciality_id=speciality)
+            except LevelSpeciality.DoesNotExist:
+                return Teacher.objects.none()
 
-        if speciality_id:
-            queryset = queryset.filter(enrollments__speciality_id=speciality_id)
+            subject_ids = SubjectLevelSpeciality.objects.filter(
+                level_speciality=level_speciality,
+            ).values_list("subject_id", flat=True)
 
-        if department_id:
-            queryset = queryset.filter(enrollments__speciality__department_id=department_id)
+            teacher_ids = TeacherSubjectClass.objects.filter(
+                year=year,
+                subject_id__in=subject_ids,
+                classe_id=classe_id
+            ).values_list("teacher_id", flat=True).distinct()
 
-        if classe_id:
-            queryset = queryset.filter(enrollments__classe_id=classe_id)
+            return Teacher.objects.filter(id__in=teacher_ids).select_related("user")
 
-        return queryset.distinct()
+        return self.queryset
 
-    def perform_destroy(self, instance):
-        instance.user.delete()
+    @action(detail=False, methods=["get"], url_path="no-courses")
+    def without_courses(self, request):
+        """
+        GET /api/teachers/without-courses/?year=2024-2025
+        Renvoie les enseignants qui ne donnent aucun cours (optionnellement pour une année).
+        """
+        year = request.query_params.get("year")
+
+        if year:
+            teachers_with_courses = TeacherSubjectClass.objects.filter(
+                year=year
+            ).values_list("teacher_id", flat=True)
+        else:
+            teachers_with_courses = TeacherSubjectClass.objects.values_list("teacher_id", flat=True)
+            
+        teachers = Teacher.objects.exclude(id__in=teachers_with_courses).select_related("user")
+
+        return Response(self.serializer_class(teachers, many=True).data)
 
     @action(methods=['DELETE'], detail=False, url_path='teachers-ids-delete')
     def teacher_delete_ids(self, request):
+        """
+        Supprime les enseignants par IDs fournis dans le corps de la requête.
+        """
         ids = request.data.get("ids", [])
         
         if not isinstance(ids, list) or not all(isinstance(i, int) for i in ids):
@@ -205,7 +240,45 @@ class TeacherViewSet(YearFilteredQuerySetMixin, viewsets.ModelViewSet):
             "not_found": not_found
         }, status=200 if deleted else 404)
 
+    @action(detail=True, methods=["get"], url_path="classes")
+    def classes_taught(self, request, pk=None):
+        """
+            GET /api/teachers/{pk}/classes/?year=2024-2025&group_by=year|classe|subject 
+            Récupère les classes enseignées par un enseignant, avec option de regroupement.
+        """
 
+        teacher = self.get_object()
+        group_by = request.query_params.get("group_by")  # year, classe, subject
+        year_filter = request.query_params.get("year")
+
+        queryset = TeacherSubjectClass.objects.filter(teacher=teacher).select_related("classe", "subject")
+
+        if year_filter:
+            queryset = queryset.filter(year=year_filter)
+
+        serializer = TeacherClassInfoSerializer(queryset, many=True)
+        raw_data = serializer.data
+
+        # GROUPING LOGIC
+        if group_by in ['year', 'classe', 'subject']:
+            grouped = defaultdict(list)
+
+            for item in raw_data:
+                if group_by == "year":
+                    key = item["year"]
+                    entry = {k: v for k, v in item.items() if k != "year"}
+                elif group_by == "classe":
+                    key = f"{item['classe']['id']}-{item['classe']['name']}"
+                    entry = {k: v for k, v in item.items() if k != "classe"}
+                elif group_by == "subject":
+                    key = f"{item['subject']['id']}-{item['subject']['name']}"
+                    entry = {k: v for k, v in item.items() if k != "subject"}
+                grouped[key].append(entry)
+
+            return Response(grouped)
+
+        # Default flat response
+        return Response(raw_data)
 
 class NoStudentUserListView(APIView):
     """ pour la liste de tous les potentiels admin d'un departement (admin et teacher)"""

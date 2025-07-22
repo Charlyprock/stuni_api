@@ -81,7 +81,6 @@ class Classe(models.Model):
 # -------------------------------------------
 # StudentLevelClassSpeciality model
 # -------------------------------------------
-
 class StudentLevelSpecialityClass(models.Model):
     student = models.ForeignKey('users.Student', on_delete=models.CASCADE, related_name='enrollments')
     level = models.ForeignKey('univercitys.Level',on_delete=models.CASCADE,related_name='enrollments')
@@ -148,4 +147,3 @@ class StudentLevelSpecialityClass(models.Model):
         if year:
             queryset = queryset.filter(year=year)
         return queryset.select_related('student__user')
-

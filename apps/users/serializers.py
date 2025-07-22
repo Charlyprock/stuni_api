@@ -17,6 +17,10 @@ from apps.univercitys.models import (
     Level, Speciality, Classe,
     StudentLevelSpecialityClass as Enrollment, LevelSpeciality
 )
+
+from apps.courses.models import (
+    Subject, TeacherSubjectClass
+)
 from apps.univercitys.serializers import EnrollmentDetailSerializer
 
 class UserSerializerMixin:

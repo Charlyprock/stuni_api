@@ -9,7 +9,12 @@ from apps.univercitys.models import (
     Classe,
     Speciality,
     LevelSpeciality,
-    StudentLevelSpecialityClass as Enrollment
+    StudentLevelSpecialityClass as Enrollment,
+)
+
+from apps.courses.models import (
+    Subject, TeacherSubjectClass,
+    SubjectLevelSpeciality,
 )
 
 class EnrollmentSerializer(serializers.ModelSerializer):
@@ -261,5 +266,4 @@ class LevelSpecialitySerializer(serializers.ModelSerializer):
             except:
                 raise serializers.ValidationError({"specialitys": [f"This Speciality pk ({speciality.pk}-{speciality.name}) already exists for this level."]})
         return validated_data
-
     

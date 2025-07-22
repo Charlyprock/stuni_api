@@ -1,13 +1,12 @@
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework import viewsets, generics, status, filters
+from rest_framework import viewsets, generics, status, filters, permissions
 from rest_framework.decorators import action
 from rest_framework.views import APIView
 
 from core.views import SerializerDetailMixin, YearFilteredQuerySetMixin
 
 from apps.users.models import User, Student
-from apps.users.permissions import IsAdminOrReadOnly
 
 from apps.univercitys.models import (
     Department,
@@ -25,7 +24,7 @@ from apps.univercitys.serializers import (
     ClassSerializer, ClassDetailSerializer,
     SpecialitySerializer, SpecialityDetailSerializer,
     LevelSpecialitySerializer,
-    EnrollmentSerializer, EnrollmentDetailSerializer
+    EnrollmentSerializer, EnrollmentDetailSerializer,
 )
 
 from apps.users.serializers import StudentModelSerializer
