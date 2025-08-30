@@ -32,19 +32,32 @@ class SubjectLevelSpeciality(models.Model):
     def __str__(self):
         return f"{self.subject}-{self.level_speciality}"
 
-
     
 # -------------------------------------------
 # TeacherSubjectClass model
 # -------------------------------------------
 class TeacherSubjectClass(models.Model):
     year = models.CharField(max_length=9)
-    teacher = models.ForeignKey("users.Teacher", on_delete=models.CASCADE, related_name="subjects")
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="classes")
-    classe = models.ForeignKey("univercitys.Classe", on_delete=models.CASCADE, related_name="teachers")
+
+    teacher = models.ForeignKey(
+        "users.Teacher", on_delete=models.CASCADE, related_name="teacher_assignments"
+    )
+    subject = models.ForeignKey(
+        "courses.Subject", on_delete=models.CASCADE, related_name="teacher_assignments"
+    )
+    classe = models.ForeignKey(
+        "univercitys.Classe", on_delete=models.CASCADE, related_name="teacher_assignments"
+    )
+    level = models.ForeignKey(
+        "univercitys.Level", on_delete=models.CASCADE, related_name="teacher_subjects"
+    )
+    speciality = models.ForeignKey(
+        "univercitys.Speciality", on_delete=models.CASCADE, related_name="teacher_subjects"
+    )
 
     class Meta:
-        unique_together = ('year', 'teacher', 'subject', 'classe')
+        unique_together = ['year', 'teacher', 'subject', 'classe']
+
 
     def __str__(self):
-        return f"{self.year} - {self.teacher} - {self.subject} ({self.classe})"
+        return f"{self.year} - {self.teacher} - {self.subject}-{self.level}-{self.speciality} ({self.classe})"

@@ -166,35 +166,30 @@ class TeacherViewSet(YearFilteredQuerySetMixin, viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Si les paramètres year, level, speciality et classe sont fournis,
-        renvoyer uniquement les enseignants de cette classe.
-        Sinon, renvoyer tous les enseignants.
+        Permet de filtrer les enseignants assignés à une classe, année, niveau, spécialité...
+        Exemple :
+        ?year=2024-2025&level=1&speciality=2&classe=3
         """
-        year = self.request.query_params.get("year")
-        level = self.request.query_params.get("level")
-        speciality = self.request.query_params.get("speciality")
-        classe_id = self.request.query_params.get("classe")
+        params = self.request.query_params
 
-        if all([year, level, speciality, classe_id]):
-            try:
-                level_speciality = LevelSpeciality.objects.get(level_id=level, speciality_id=speciality)
-            except LevelSpeciality.DoesNotExist:
-                return Teacher.objects.none()
+        year = params.get("year")
+        level = params.get("level")
+        speciality = params.get("speciality")
+        classe_id = params.get("classe")
 
-            subject_ids = SubjectLevelSpeciality.objects.filter(
-                level_speciality=level_speciality,
-            ).values_list("subject_id", flat=True)
+        if not all([year, level, speciality, classe_id]):
+            return self.queryset  # Pas de filtres : tous les enseignants
 
-            teacher_ids = TeacherSubjectClass.objects.filter(
-                year=year,
-                subject_id__in=subject_ids,
-                classe_id=classe_id
-            ).values_list("teacher_id", flat=True).distinct()
+        teacher_ids = TeacherSubjectClass.objects.filter(
+            year=year,
+            level_id=level,
+            speciality_id=speciality,
+            classe_id=classe_id,
+        ).values_list("teacher_id", flat=True).distinct()
 
-            return Teacher.objects.filter(id__in=teacher_ids).select_related("user")
-
-        return self.queryset
-
+        return self.queryset.filter(id__in=teacher_ids)
+    
+    
     @action(detail=False, methods=["get"], url_path="no-courses")
     def without_courses(self, request):
         """

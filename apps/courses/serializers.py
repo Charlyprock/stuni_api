@@ -103,7 +103,7 @@ class SubjectLevelSpecialitySerializer(serializers.ModelSerializer):
 class TeacherSubjectClassSerializer(serializers.ModelSerializer):
     class Meta:
         model = TeacherSubjectClass
-        fields = ['id', 'year', 'teacher', 'subject', 'classe']
+        fields = ['id', 'year', 'teacher', 'subject', 'classe', 'level', 'speciality']
 
     def validate_year(self, year):
         if not Enrollment.validate_year_format(year):
@@ -111,27 +111,30 @@ class TeacherSubjectClassSerializer(serializers.ModelSerializer):
         return year
 
     def validate(self, data):
-        if self.instance:
-            # Update : exclure l'objet actuel
-            exists = TeacherSubjectClass.objects.exclude(id=self.instance.id).filter(
-                year=data['year'],
-                teacher=data['teacher'],
-                subject=data['subject'],
-                classe=data['classe']
-            ).exists()
-        else:
-            exists = TeacherSubjectClass.objects.filter(
-                year=data['year'],
-                teacher=data['teacher'],
-                subject=data['subject'],
-                classe=data['classe']
-            ).exists()
+        teacher = data.get("teacher")
+        subject = data.get("subject")
+        classe = data.get("classe")
+        year = data.get("year")
+        level = data.get("level")
+        speciality = data.get("speciality")
 
-        if exists:
-            raise serializers.ValidationError("Ce cours est déjà assigné à cette classe, matière et année.")
+        # Empêcher les doublons
+        qs = TeacherSubjectClass.objects.filter(
+            teacher=teacher,
+            subject=subject,
+            classe=classe,
+            year=year
+        )
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError("Cette assignation existe déjà pour cet enseignant, matière, classe et année.")
+
+        # Vérifier que la classe appartient au bon parcours
+        if classe.level_id != level.id or classe.speciality_id != speciality.id:
+            raise serializers.ValidationError("La classe sélectionnée n'appartient pas au niveau ou à la spécialité spécifiée.")
 
         return data
-
 
 class TeacherClassInfoSerializer(serializers.ModelSerializer):
     subject = serializers.SerializerMethodField()
